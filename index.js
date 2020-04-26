@@ -5,6 +5,43 @@ const ytdl = require("ytdl-core");
 const client = new Discord.Client();
 
 const queue = new Map();
+const ytsr = require('ytsr');
+
+options ={
+
+    limit: 1
+
+}
+
+ytsr('github', options, (err, res) => {
+
+    if(err) throw err;
+
+    //let data= JSON.parse(res);
+
+    else
+
+    console.log(res.items[0].link);
+
+   // console.log(res);
+
+});
+// const yts = require( 'yt-search' );
+// const opts = {
+//     query: 'batman',
+//     // search: 'superman theme', // same as opts.query
+//     pageStart: 1,
+//     pageEnd: 3,
+// }
+
+// yts( opts, function ( err, r ) {
+
+//   if ( err ) throw err;
+//   const video = r.videos[0] ;
+//   //console.log(r);
+//   console.log(video.url);
+
+// })
 
 client.once("ready", () => {
   console.log("Ready!");
@@ -24,10 +61,13 @@ client.on("message", async message => {
 
   const serverQueue = queue.get(message.guild.id);
 
-  if (message.content.startsWith(`${prefix}play`)) {
+  if (message.content.startsWith(`${prefix}url`)) {
     execute(message, serverQueue);
     return;
-  } else if (message.content.startsWith(`${prefix}skip`)) {
+  }else if (message.content.startsWith(`${prefix}play`)) {
+      search_play(message, serverQueue);
+      return;} 
+  else if (message.content.startsWith(`${prefix}skip`)) {
     skip(message, serverQueue);
     return;
   } else if (message.content.startsWith(`${prefix}stop`)) {
@@ -37,9 +77,13 @@ client.on("message", async message => {
     message.channel.send("You need to enter a valid command!");
   }
 });
-
+async function search_play(message, serverQueue){
+  const string = message.content.split(/(?<=^\S+)\s/); ;
+  console.log(string[1]);
+  }
 async function execute(message, serverQueue) {
   const args = message.content.split(" ");
+  console.log(args[1]);
 
   const voiceChannel = message.member.voice.channel;
   if (!voiceChannel)
