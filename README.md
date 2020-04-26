@@ -19,3 +19,5 @@ git commit -a -m "MY MESSAGE HERE"
 To push your committed changes from your local repository to your remote repository:
 
 git push origin master
+e.g git push https://github.com/hitesh0710/Music-bot master
+
