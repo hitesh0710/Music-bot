@@ -6,43 +6,6 @@ const client = new Discord.Client();
 
 const queue = new Map();
 const ytsr = require('ytsr');
-
-options ={
-
-    limit: 1
-
-}
-
-ytsr('github', options, (err, res) => {
-
-    if(err) throw err;
-
-    //let data= JSON.parse(res);
-
-    else
-
-    console.log(res.items[0].link);
-
-   // console.log(res);
-
-});
-// const yts = require( 'yt-search' );
-// const opts = {
-//     query: 'batman',
-//     // search: 'superman theme', // same as opts.query
-//     pageStart: 1,
-//     pageEnd: 3,
-// }
-
-// yts( opts, function ( err, r ) {
-
-//   if ( err ) throw err;
-//   const video = r.videos[0] ;
-//   //console.log(r);
-//   console.log(video.url);
-
-// })
-
 client.once("ready", () => {
   console.log("Ready!");
 });
@@ -64,9 +27,10 @@ client.on("message", async message => {
   if (message.content.startsWith(`${prefix}url`)) {
     execute(message, serverQueue);
     return;
-  }else if (message.content.startsWith(`${prefix}play`)) {
-      search_play(message, serverQueue);
-      return;} 
+  } else if (message.content.startsWith(`${prefix}play`)) {
+    search_play(message, serverQueue);
+    return;
+  }
   else if (message.content.startsWith(`${prefix}skip`)) {
     skip(message, serverQueue);
     return;
@@ -77,10 +41,68 @@ client.on("message", async message => {
     message.channel.send("You need to enter a valid command!");
   }
 });
-async function search_play(message, serverQueue){
-  const string = message.content.split(/(?<=^\S+)\s/); ;
-  console.log(string[1]);
+async function search_play(message, serverQueue) {
+  const string = message.content.split(/(?<=^\S+)\s/);
+  //console.log(string[1]);
+  let search_string = string[1];
+  options = {
+    limit: 1
   }
+
+  ytsr(search_string, options, async (err, res) => {
+    if (err) throw err;
+    //let data= JSON.parse(res);
+    else {
+      let link = res.items[0].link;
+      console.log(link);
+      const voiceChannel = message.member.voice.channel;
+      if (!voiceChannel)
+        return message.channel.send(
+          "You need to be in a voice channel to play music!"
+        );
+      const permissions = voiceChannel.permissionsFor(message.client.user);
+      if (!permissions.has("CONNECT") || !permissions.has("SPEAK")) {
+        return message.channel.send(
+          "I need the permissions to join and speak in your voice channel!"
+        );
+      }
+
+      const songInfo = await ytdl.getInfo(link);
+      const song = {
+        title: songInfo.title,
+        url: songInfo.video_url
+      };
+
+      if (!serverQueue) {
+        const queueContruct = {
+          textChannel: message.channel,
+          voiceChannel: voiceChannel,
+          connection: null,
+          songs: [],
+          volume: 5,
+          playing: true
+        };
+
+        queue.set(message.guild.id, queueContruct);
+
+        queueContruct.songs.push(song);
+
+        try {
+          var connection = await voiceChannel.join();
+          queueContruct.connection = connection;
+          play(message.guild, queueContruct.songs[0]);
+        } catch (err) {
+          console.log(err);
+          queue.delete(message.guild.id);
+          return message.channel.send(err);
+        }
+      } else {
+        serverQueue.songs.push(song);
+        return message.channel.send(`${song.title} has been added to the queue!`);
+      }
+    }
+  });
+}
 async function execute(message, serverQueue) {
   const args = message.content.split(" ");
   console.log(args[1]);
